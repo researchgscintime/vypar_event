@@ -330,7 +330,7 @@ html,body{height:100%}
 body{margin:0;background:var(--ground);color:var(--ink);font:18px/1.45 var(--f-body);-webkit-tap-highlight-color:transparent;overflow-x:hidden}
 .app{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;max-width:1100px;margin:0 auto;padding-inline:20px;padding-block:14px;gap:12px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-header img{height:58px;width:auto;cursor:pointer}
+header img{height:58px;width:auto}
 .tag{font:700 13px/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--mag);text-align:right}
 .tag span{display:block;color:var(--muted);letter-spacing:.06em;margin-top:4px;font-weight:600}
 .sync{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font:600 12px/1 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
@@ -443,20 +443,6 @@ input:focus{border-color:var(--mag)}
 .again span{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
 .saved{grid-column:1/-1;justify-self:center;font-size:14px;color:var(--muted)}
 
-/* staff */
-#staff{position:fixed;inset:0;background:rgba(31,26,36,.55);display:grid;place-items:center;padding:16px;z-index:10}
-.panel{background:#fff;border-radius:20px;max-width:620px;width:100%;max-height:100%;overflow:auto;padding:24px;display:grid;gap:14px}
-.panel h3{font-size:26px}
-.panel .row{display:flex;gap:10px;flex-wrap:wrap}
-.panel input{font-size:16px;padding:10px 12px}
-.panel .stat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.panel .stat div{background:var(--ground);border-radius:12px;padding:10px 12px;display:grid}
-.panel .stat b{font:800 26px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
-.panel .stat span{font-size:13px;color:var(--muted)}
-.sbtn{background:var(--char);color:#fff;border-radius:999px;padding:10px 18px;font:700 15px/1 var(--f-body)}
-.sbtn.alt{background:var(--ground);color:var(--char)}
-#smsg{font-size:15px;min-height:1.4em}
-#smsg.ok{color:var(--ok)} #smsg.bad{color:var(--bad)}
 .small{font-size:13px;color:var(--muted)}
 
 @media (max-width:760px){
@@ -545,25 +531,14 @@ input:focus{border-color:var(--mag)}
   <footer><span>www.gscintime.com · +91 89769 30037 · +91 22 4612 5600</span><span>A quick self-check, not a professional review.</span></footer>
 </div>
 
-<!-- staff settings: tap the logo 5 times -->
-<div id="staff" hidden>
-  <div class="panel" role="dialog" aria-labelledby="st-h">
-    <h3 id="st-h">Staff settings</h3>
-    <div class="stat"><div><b id="st-total">0</b><span>Saved on this tablet</span></div><div><b id="st-today">0</b><span>Today</span></div><div><b id="st-q">0</b><span>Waiting to upload</span></div></div>
-    <div class="f"><label for="st-url">Google Sheet web app URL</label><input id="st-url" type="url" placeholder="/api/submit"></div>
-    <div class="f"><label for="st-key">Key (same as SHARED_KEY in the script)</label><input id="st-key" type="text" autocapitalize="off"></div>
-    <div class="f"><label for="st-dev">Tablet name</label><input id="st-dev" type="text" placeholder="e.g. Counter tablet 1"></div>
-    <div class="row"><button class="sbtn" id="st-save" type="button">Save &amp; test</button><button class="sbtn alt" id="st-sync" type="button">Upload now</button><button class="sbtn alt" id="st-csv" type="button">Download all as CSV</button></div>
-    <p id="smsg"></p>
-    <p class="small">Every entry is kept on this tablet first, then uploaded. If the internet drops, entries wait and upload automatically when it returns. Do not clear the browser data on this tablet until the event is over.</p>
-    <div class="row" style="justify-content:flex-end"><button class="sbtn alt" id="st-close" type="button">Close</button></div>
-  </div>
-</div>
-
 <script>
-/* ---- Default connection (can also be set in Staff settings) ---- */
-const DEFAULT_SHEET_URL = '/api/submit';   // Vercel route that forwards to the Google Sheet
-const DEFAULT_KEY = 'gsc-g09-2026';
+/* ---- Google Sheet connection (fixed) ---- */
+// On the Vercel site entries go to /api/submit, which forwards them to Google.
+// Anywhere else (or if that route is missing) they go straight to the Apps Script.
+const API_URL = '/api/submit';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBgH0FrGoWEHhifWwBB4VNfzwoEIlVJfn1mhGh9pSMPzDrliWYscy_erg1M8R9EesK5A/exec';
+const SHARED_KEY = 'gsc-g09-2026';
+const DEVICE_NAME = 'Tablet';
 
 (function(){
   const Q=[
@@ -584,7 +559,7 @@ const DEFAULT_KEY = 'gsc-g09-2026';
 
   /* ---------- storage (kept on the tablet first) ---------- */
   const LS={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-  const cfg=()=>({url:LS.get('hc.url',DEFAULT_SHEET_URL),key:LS.get('hc.key',DEFAULT_KEY),dev:LS.get('hc.dev','Tablet')});
+  const cfg=()=>({url:GOOGLE_SCRIPT_URL,key:SHARED_KEY,dev:DEVICE_NAME});
   const all=()=>LS.get('hc.records',[]);
   const queue=()=>LS.get('hc.queue',[]);
   function keep(rec){const a=all();a.push(rec);LS.set('hc.records',a);const q=queue();q.push(rec.id);LS.set('hc.queue',q);}
@@ -596,11 +571,19 @@ const DEFAULT_KEY = 'gsc-g09-2026';
     if(!c.url) setSync('off','Sheet not connected · '+all().length+' saved on tablet');
     else if(n) setSync('wait',n+' waiting to upload');
     else setSync('','All entries uploaded');}
-  async function post(body){
-    const c=cfg(); if(!c.url) throw new Error('no_url');
+  async function send(url,body){
     const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),15000);
-    try{const r=await fetch(c.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({key:c.key},body)),signal:ctrl.signal,redirect:'follow'});
-      const j=await r.json(); return j;}finally{clearTimeout(t);}
+    try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({key:SHARED_KEY},body)),signal:ctrl.signal,redirect:'follow'});
+      if(!r.ok) throw new Error('http_'+r.status);
+      return await r.json();}finally{clearTimeout(t);}
+  }
+  let useApi=/^https?:$/.test(location.protocol);
+  async function post(body){
+    if(useApi){
+      try{return await send(API_URL,body);}
+      catch(e){if(!navigator.onLine) throw e; useApi=false;}   // no /api route here: go direct
+    }
+    return send(GOOGLE_SCRIPT_URL,body);
   }
   async function syncNow(){
     if(syncing) return; const c=cfg(); if(!c.url){refreshSync();return;}
@@ -611,7 +594,7 @@ const DEFAULT_KEY = 'gsc-g09-2026';
         const rec=byId[id]; if(!rec){q=q.filter(x=>x!==id);continue;}
         let j; try{j=await post(rec);}catch(e){break;}
         if(j&&j.ok){q=q.filter(x=>x!==id);LS.set('hc.queue',q);}
-        else if(j&&j.error==='bad_key'){setSync('off','Wrong key: check Staff settings');syncing=false;return;}
+        else if(j&&j.error==='bad_key'){setSync('off','Wrong key: SHARED_KEY does not match the script');syncing=false;return;}
         else break;
       }
     }finally{syncing=false;refreshSync();}
@@ -684,33 +667,6 @@ const DEFAULT_KEY = 'gsc-g09-2026';
     cur={};
   }
   $('again').addEventListener('click',home);
-
-  /* ---------- staff panel: tap the logo 5 times ---------- */
-  let taps=0,tapT=null;
-  $('logo').addEventListener('click',()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1500);if(taps>=5){taps=0;openStaff();}});
-  function todayCount(){const d=new Date().toDateString();return all().filter(r=>new Date(r.playedAt).toDateString()===d).length;}
-  function openStaff(){const c=cfg();$('st-url').value=c.url;$('st-key').value=c.key;$('st-dev').value=c.dev;$('st-total').textContent=all().length;$('st-today').textContent=todayCount();$('st-q').textContent=queue().length;$('smsg').textContent='';$('smsg').className='';$('staff').hidden=false;}
-  function msg(t,cls){$('smsg').textContent=t;$('smsg').className=cls||'';}
-  $('st-close').addEventListener('click',()=>$('staff').hidden=true);
-  $('st-save').addEventListener('click',async()=>{
-    const url=$('st-url').value.trim(); if(url&&!/^(\/api\/|https:\/\/script\.google(usercontent)?\.com\/)/.test(url)){msg('Use /api/submit, or a Google Apps Script web app URL.','bad');return;}
-    LS.set('hc.url',url);LS.set('hc.key',$('st-key').value.trim());LS.set('hc.dev',$('st-dev').value.trim()||'Tablet');
-    if(!url){msg('Saved. No sheet connected: entries stay on this tablet only.');refreshSync();return;}
-    msg('Testing the connection…');
-    try{const j=await post({test:true});if(j&&j.ok){msg('Connected. New entries will appear in the Google Sheet.','ok');syncNow().then(()=>$('st-q').textContent=queue().length);}else msg(j&&j.error==='bad_key'?'Connected, but the key does not match SHARED_KEY in the script.':'The sheet answered with an error: '+(j&&j.error),'bad');}
-    catch(e){msg('Could not reach the sheet. Check the URL, the internet connection, and that the script is deployed with access set to “Anyone”.','bad');}
-    refreshSync();
-  });
-  $('st-sync').addEventListener('click',async()=>{msg('Uploading…');await syncNow();$('st-q').textContent=queue().length;msg(queue().length?queue().length+' still waiting. Check the connection.':'All entries uploaded.',queue().length?'bad':'ok');});
-  $('st-csv').addEventListener('click',()=>{
-    const H=['Record ID','Played at','Name','Mobile','Email','Business name','City','Business type','Annual turnover','Score','Result','Areas to check',...Q.map((q,k)=>'Q'+(k+1)+' '+q[3]),'Time taken (s)','Timed out','Consent','Device','Uploaded'];
-    const qset=new Set(queue());
-    const esc=v=>{v=v===undefined||v===null?'':String(v);if(/^[=+\-@]/.test(v))v="'"+v;return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-    const rows=all().map(r=>[r.id,r.playedAt,r.name,r.mobile,r.email,r.company,r.city,r.businessType,r.turnover,r.score,r.band,(r.gaps||[]).join('; '),...r.answers.map(a=>a===1?'Yes':a===0?'No':'Not answered'),r.seconds,r.timedOut?'Yes':'No',r.consent?'Yes':'No',r.device,qset.has(r.id)?'No':'Yes']);
-    const csv='﻿'+[H,...rows].map(r=>r.map(esc).join(',')).join('\r\n');
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='GSC_HealthCheck_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
-    msg('CSV downloaded with '+rows.length+' entries.','ok');
-  });
 
   home(); syncNow();
 })();
