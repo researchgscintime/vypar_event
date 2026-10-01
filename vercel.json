@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/GST_HealthCheck_App.html" }
+  ],
+  "functions": {
+    "api/submit.js": { "maxDuration": 30 }
+  },
+  "headers": [
+    {
+      "source": "/GST_HealthCheck_App.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ]
+}
