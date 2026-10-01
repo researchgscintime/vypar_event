@@ -1,13 +1,14 @@
 // Vercel serverless function: the tablet posts here (same origin, no CORS),
 // and this forwards the entry to the Google Apps Script web app.
-// Set these in Vercel → Project → Settings → Environment Variables:
-//   GOOGLE_SCRIPT_URL  the Apps Script web app URL (ends with /exec)
-//   SHARED_KEY         the same value as SHARED_KEY in the Apps Script
+// The values below are built in. Vercel environment variables with the same
+// names (GOOGLE_SCRIPT_URL, SHARED_KEY) override them if set.
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBgH0FrGoWEHhifWwBB4VNfzwoEIlVJfn1mhGh9pSMPzDrliWYscy_erg1M8R9EesK5A/exec';
+const DEFAULT_KEY = 'gsc-g09-2026';
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  const url = process.env.GOOGLE_SCRIPT_URL;
-  if (!url) return res.status(200).json({ ok: false, error: 'GOOGLE_SCRIPT_URL is not set on Vercel' });
+  const url = process.env.GOOGLE_SCRIPT_URL || DEFAULT_SCRIPT_URL;
+  const key = process.env.SHARED_KEY || DEFAULT_KEY;
 
   try {
     if (req.method === 'GET') {
@@ -20,7 +21,7 @@ module.exports = async (req, res) => {
     if (Buffer.isBuffer(body)) body = body.toString('utf8');
     if (typeof body === 'string') body = body ? JSON.parse(body) : {};
     body = body || {};
-    if (process.env.SHARED_KEY) body.key = process.env.SHARED_KEY;
+    body.key = key;
 
     // Apps Script answers POST with a 302 to script.googleusercontent.com; fetch follows it.
     const r = await fetch(url, {
